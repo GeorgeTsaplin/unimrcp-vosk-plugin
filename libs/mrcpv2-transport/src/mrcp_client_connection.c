@@ -34,6 +34,7 @@ struct mrcp_connection_agent_t {
 
 	apr_uint32_t                          request_timeout;
 	apt_bool_t                            offer_new_connection;
+	apr_size_t                            max_shared_use_count;
 	apr_size_t                            tx_buffer_size;
 	apr_size_t                            rx_buffer_size;
 
@@ -75,11 +76,12 @@ MRCP_DECLARE(mrcp_connection_agent_t*) mrcp_client_connection_agent_create(
 	mrcp_connection_agent_t *agent;
 
 	apt_log(APT_LOG_MARK,APT_PRIO_NOTICE,"Create MRCPv2 Agent [%s] [%"APR_SIZE_T_FMT"]",
-				id,	max_connection_count);
+				id,max_connection_count);
 	agent = apr_palloc(pool,sizeof(mrcp_connection_agent_t));
 	agent->pool = pool;
 	agent->request_timeout = 0;
 	agent->offer_new_connection = offer_new_connection;
+	agent->max_shared_use_count = 100;
 	agent->rx_buffer_size = MRCP_STREAM_BUFFER_SIZE;
 	agent->tx_buffer_size = MRCP_STREAM_BUFFER_SIZE;
 
@@ -167,6 +169,14 @@ MRCP_DECLARE(void) mrcp_client_connection_tx_size_set(
 		size = MRCP_STREAM_BUFFER_SIZE;
 	}
 	agent->tx_buffer_size = size;
+}
+
+/** Set max shared use count for an MRCPv2 connection */
+MRCP_DECLARE(void) mrcp_client_connection_max_shared_use_set(
+								mrcp_connection_agent_t *agent,
+								apr_size_t max_shared_use_count)
+{
+	agent->max_shared_use_count = max_shared_use_count;
 }
 
 /** Set request timeout */
@@ -364,9 +374,22 @@ static mrcp_connection_t* mrcp_client_agent_connection_find(mrcp_connection_agen
 	for(connection = APR_RING_FIRST(&agent->connection_list);
 			connection != APR_RING_SENTINEL(&agent->connection_list, mrcp_connection_t, link);
 				connection = APR_RING_NEXT(connection, link)) {
+		/* do not observe connections with closed socket */
+		if(!connection->sock)
+			continue;
+
 		if(apr_sockaddr_info_get(&sockaddr,descriptor->ip.buf,APR_INET,descriptor->port,0,connection->pool) == APR_SUCCESS) {
 			if(apr_sockaddr_equal(sockaddr,connection->r_sockaddr) != 0 && 
 				descriptor->port == connection->r_sockaddr->port) {
+
+				if(agent->max_shared_use_count && connection->use_count >= agent->max_shared_use_count) {
+					/* do not allow the same connection to be used infinitely */
+					apt_log(APT_LOG_MARK,APT_PRIO_DEBUG,"Max Use Count Reached for Connection %s [%d]",
+						connection->id,
+						connection->use_count);
+					continue;
+				}
+
 				return connection;
 			}
 		}

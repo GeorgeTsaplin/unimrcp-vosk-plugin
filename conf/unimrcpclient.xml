@@ -21,7 +21,7 @@
       IP address can also be specified explicitly.
     -->
     <!-- <ip>10.10.0.1</ip> -->
-    
+
     <!-- <ext-ip>a.b.c.d</ext-ip> -->
 
     <!--
@@ -67,21 +67,22 @@
       <!-- <request-timeout>5000</request-timeout> -->
       <sdp-origin>UniMRCPClient</sdp-origin>
     </rtsp-uac>
-    
+
     <!-- MRCPv2 connection agent -->
     <mrcpv2-uac id="MRCPv2-Agent-1">
       <max-connection-count>100</max-connection-count>
+      <max-shared-use-count>100</max-shared-use-count>
       <offer-new-connection>false</offer-new-connection>
       <rx-buffer-size>1024</rx-buffer-size>
       <tx-buffer-size>1024</tx-buffer-size>
       <!-- <request-timeout>5000</request-timeout> -->
     </mrcpv2-uac>
-    
+
     <!-- Media processing engine -->
     <media-engine id="Media-Engine-1">
       <realtime-rate>1</realtime-rate>
     </media-engine>
-    
+
     <!-- Factory of RTP terminations -->
     <rtp-factory id="RTP-Factory-1">
       <!--
@@ -94,7 +95,7 @@
       <rtp-port-max>5000</rtp-port-max>
     </rtp-factory>
   </components>
-  
+
   <settings>
     <!-- Common (default) RTP/RTCP settings -->
     <rtp-settings id="RTP-Settings-1">
