@@ -461,7 +461,25 @@ const char* KaldiRecognizer::GetResult()
         }
     }
 
-    return StoreReturn(obj.dump());
+    //return StoreReturn(obj.dump());
+
+    // TODO g.tsaplin: 
+    /*
+<?xml version="1.0"?>
+<result>
+  <interpretation grammar="session:field2@field.grammar" confidence="0.41">
+    <instance>my name is george</instance>
+    <input mode="speech">my name is george</input>
+  </interpretation>
+</result>
+    */
+    return StoreReturn("<?xml version=\"1.0\"?> \
+<result> \
+  <interpretation grammar=\"session:field2@field.grammar\" confidence=\"0.41\"> \
+    <instance>" + obj["text"].ToString() + "</instance> \
+    <input mode=\"speech\">" + obj["text"].ToString() + "</input> \
+  </interpretation> \
+</result>");
 }
 
 
