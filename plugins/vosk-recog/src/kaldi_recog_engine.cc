@@ -452,7 +452,7 @@ static apt_bool_t kaldi_recog_recognition_complete(kaldi_recog_channel_t *recog_
 static apt_bool_t kaldi_recog_result_load(kaldi_recog_channel_t *recog_channel, mrcp_message_t *message)
 {
 	apt_str_t *body = &message->body;
-	char *finalResult = recog_channel->recognizer->FinalResult();
+	const char *finalResult = recog_channel->recognizer->FinalResult();
 	if (!finalResult) {
 		return FALSE;
 	}
