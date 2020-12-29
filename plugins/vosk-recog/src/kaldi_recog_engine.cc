@@ -436,11 +436,12 @@ static apt_bool_t kaldi_recog_result_load(kaldi_recog_channel_t *recog_channel, 
 	body->buf = apr_psprintf(message->pool,
 		"<?xml version=\"1.0\"?>\n"
 		"<result>\n"
-		"  <interpretation confidence=\"%d\">\n"
+		"  <interpretation grammar=\"%s\" confidence=\"%d\">\n"
 		"    <instance>%s</instance>\n"
 		"    <input mode=\"speech\">%s</input>\n"
 		"  </interpretation>\n"
 		"</result>\n",
+		recog_channel->recog_request->body.buf,
 		99,
 		finalResult,
 		finalResult);
