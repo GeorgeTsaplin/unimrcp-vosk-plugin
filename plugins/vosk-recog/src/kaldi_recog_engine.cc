@@ -415,6 +415,48 @@ static apt_bool_t kaldi_recog_start_of_input(kaldi_recog_channel_t *recog_channe
 	return mrcp_engine_channel_message_send(recog_channel->channel,message);
 }
 
+/* Load kaldi recognition result */
+static apt_bool_t kaldi_recog_result_load(kaldi_recog_channel_t *recog_channel, mrcp_message_t *message)
+{
+	apt_str_t *body = &message->body;
+	const char *finalResult = recog_channel->recognizer->FinalResult();
+	if (!finalResult) {
+		return FALSE;
+	}
+
+	/*
+	<?xml version="1.0"?>
+	<result>
+	  <interpretation grammar="session:field2@field.grammar" confidence="0.41">
+		<instance>my name is george</instance>
+		<input mode="speech">my name is george</input>
+	  </interpretation>
+	</result>
+	*/
+	body->buf = apr_psprintf(message->pool,
+		"<?xml version=\"1.0\"?>\n"
+		"<result>\n"
+		"  <interpretation confidence=\"%d\">\n"
+		"    <instance>%s</instance>\n"
+		"    <input mode=\"speech\">%s</input>\n"
+		"  </interpretation>\n"
+		"</result>\n",
+		99,
+		finalResult,
+		finalResult);
+	if (body->buf) {
+		mrcp_generic_header_t *generic_header;
+		generic_header = mrcp_generic_header_prepare(message);
+		if (generic_header) {
+			/* set content type */
+			apt_string_assign(&generic_header->content_type, "application/x-nlsml", message->pool);
+			mrcp_generic_header_property_add(message, GENERIC_HEADER_CONTENT_TYPE);
+		}
+
+		body->length = strlen(body->buf);
+	}
+	return TRUE;
+}
 
 /* Raise kaldi RECOGNITION-COMPLETE event */
 static apt_bool_t kaldi_recog_recognition_complete(kaldi_recog_channel_t *recog_channel, mrcp_recog_completion_cause_e cause)
@@ -446,49 +488,6 @@ static apt_bool_t kaldi_recog_recognition_complete(kaldi_recog_channel_t *recog_
 	recog_channel->recog_request = NULL;
 	/* send asynch event */
 	return mrcp_engine_channel_message_send(recog_channel->channel,message);
-}
-
-/* Load xfyun recognition result */
-static apt_bool_t kaldi_recog_result_load(kaldi_recog_channel_t *recog_channel, mrcp_message_t *message)
-{
-	apt_str_t *body = &message->body;
-	const char *finalResult = recog_channel->recognizer->FinalResult();
-	if (!finalResult) {
-		return FALSE;
-	}
-
-/*
-<?xml version="1.0"?>
-<result>
-  <interpretation grammar="session:field2@field.grammar" confidence="0.41">
-	<instance>my name is george</instance>
-	<input mode="speech">my name is george</input>
-  </interpretation>
-</result>
-*/
-	body->buf = apr_psprintf(message->pool,
-		"<?xml version=\"1.0\"?>\n"
-		"<result>\n"
-		"  <interpretation confidence=\"%d\">\n"
-		"    <instance>%s</instance>\n"
-		"    <input mode=\"speech\">%s</input>\n"
-		"  </interpretation>\n"
-		"</result>\n",
-		99,
-		finalResult,
-		finalResult);
-	if (body->buf) {
-		mrcp_generic_header_t *generic_header;
-		generic_header = mrcp_generic_header_prepare(message);
-		if (generic_header) {
-			/* set content type */
-			apt_string_assign(&generic_header->content_type, "application/x-nlsml", message->pool);
-			mrcp_generic_header_property_add(message, GENERIC_HEADER_CONTENT_TYPE);
-		}
-
-		body->length = strlen(body->buf);
-	}
-	return TRUE;
 }
 
 /** Callback is called from MPF engine context to write/send new frame */
