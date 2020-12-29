@@ -461,32 +461,14 @@ const char* KaldiRecognizer::GetResult()
         }
     }
 
-    //return StoreReturn(obj.dump());
-
-    // TODO g.tsaplin: 
-    /*
-<?xml version="1.0"?>
-<result>
-  <interpretation grammar="session:field2@field.grammar" confidence="0.41">
-    <instance>my name is george</instance>
-    <input mode="speech">my name is george</input>
-  </interpretation>
-</result>
-    */
-    return StoreReturn("<?xml version=\"1.0\"?> \
-<result> \
-  <interpretation grammar=\"session:field2@field.grammar\" confidence=\"0.41\"> \
-    <instance>" + obj["text"].ToString() + "</instance> \
-    <input mode=\"speech\">" + obj["text"].ToString() + "</input> \
-  </interpretation> \
-</result>");
+	return StoreReturn(obj["text"].ToString());
 }
 
 
 const char* KaldiRecognizer::PartialResult()
 {
     if (state_ != RECOGNIZER_RUNNING) {
-        return StoreReturn("{\"text\": \"\"}");
+        return StoreReturn("");
     }
 
     json::JSON res;
@@ -511,13 +493,13 @@ const char* KaldiRecognizer::PartialResult()
     }
     res["partial"] = text.str();
 
-    return StoreReturn(res.dump());
+    return StoreReturn(text.str());
 }
 
 const char* KaldiRecognizer::Result()
 {
     if (state_ != RECOGNIZER_RUNNING) {
-        return StoreReturn("{\"text\": \"\"}");
+        return StoreReturn("");
     }
     decoder_->FinalizeDecoding();
     state_ = RECOGNIZER_ENDPOINT;
@@ -527,7 +509,7 @@ const char* KaldiRecognizer::Result()
 const char* KaldiRecognizer::FinalResult()
 {
     if (state_ != RECOGNIZER_RUNNING) {
-        return StoreReturn("{\"text\": \"\"}");
+        return StoreReturn("");
     }
 
     feature_pipeline_->InputFinished();
